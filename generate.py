@@ -65,8 +65,9 @@ def build(out,start,end,first,last):
         info.update(status='draft',reason='',headway_seconds=headway,cycle_minutes=cycle)
     for k in sorted(used):
         x=stops[k]; name=x.get('tags',{}).get('name') or f'Paradero OSM {k}'
+        if name == 'PARQUE LA CONSTITUCIÓN': name = 'Parque La Constitución'
         add('stops',stop_id=f'osm_{k}',stop_name=name,stop_lat=x['lat'],stop_lon=x['lon'])
-    add('feed_info',feed_publisher_name='ColombiaTransit research draft',feed_publisher_url='https://github.com/ColombiaTransit',feed_lang='es',feed_start_date=start.strftime('%Y%m%d'),feed_end_date=end.strftime('%Y%m%d'),feed_version='draft-0.1')
+    add('feed_info',feed_publisher_name='ColombiaTransit research draft',feed_publisher_url='https://github.com/ColombiaTransit',feed_lang='es',feed_start_date=start.strftime('%Y%m%d'),feed_end_date=end.strftime('%Y%m%d'),feed_version='draft-0.1',feed_contact_url='https://github.com/ColombiaTransit/gtfs-armenia/issues')
     assert tables['trips'] and tables['stops']
     routeids={x['route_id'] for x in tables['routes']}; tripids={x['trip_id'] for x in tables['trips']}; stopids={x['stop_id'] for x in tables['stops']}
     assert all(x['route_id'] in routeids for x in tables['trips'])
