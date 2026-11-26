@@ -1,0 +1,35 @@
+name: Fetch Armenia mobility plan
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fetch-mobility-plan.yml'
+permissions:
+  contents: read
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download municipal PDF
+        run: |
+          mkdir -p research-download
+          curl --fail --location --retry 2 --connect-timeout 20 --max-time 120 \
+            --user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' \
+            --header 'Accept: application/pdf,*/*;q=0.8' \
+            --output research-download/1Plan_de_Movilidad_Sostenible_y_Segura.pdf \
+            'https://www.armenia.gov.co/wp-content/uploads/2024/02/1Plan_de_Movilidad_Sostenible_y_Segura.pdf'
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('research-download/1Plan_de_Movilidad_Sostenible_y_Segura.pdf')
+          data=p.read_bytes()
+          if not data.startswith(b'%PDF-') or b'%%EOF' not in data[-4096:]:
+              raise SystemExit('Response is not a complete PDF')
+          print(f'PDF size: {len(data)} bytes; SHA256: {hashlib.sha256(data).hexdigest()}')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: armenia-mobility-plan
+          path: research-download/*.pdf
+          if-no-files-found: error
