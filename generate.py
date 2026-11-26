@@ -8,7 +8,18 @@ from pyproj import Transformer
 P=Path(__file__).resolve().parent
 T=Transformer.from_crs(4326,32618,always_xy=True)
 OPS={'R1':(95,11),'R2':(120,10),'R3':(60,3),'R4':(115,14),'R5':(86,5),'R6':(92,5),'R7':(78,3),'R9':(96,8),'R18':(110,11),'R28':(100,10),'R31':(80,2),'R32':(100,5),'R35':(75,13),'R36':(95,12),'R37':(93,7)}
-HOLD={'R9':'44.7 km geometry vs historical 32 km; cycle unverified','R24':'No frequency','R25':'No frequency','R33':'No frequency; long geometry segment','R-EXPRESA':'Shared realtime identifier; combined dispatch allocation unknown','R-EXP-GIB':'Shared realtime identifier; combined dispatch allocation unknown','R-PORTUGALITO':'No shape and special timetable unknown'}
+HOLD={'R9':'44.7 km geometry vs historical 32 km; cycle unverified','R24':'No frequency','R25':'No frequency','R33':'No frequency; long geometry segment','R-PORTUGALITO':'No shape and special timetable unknown'}
+# User-approved provisional equal split of the historical combined Expresa service.
+# Cycle time is historical aggregate; departure window is a separate draft-only estimate.
+EXPRESA={'R-EXPRESA':0,'R-EXP-GIB':33*60}
+EXPRESA_HEADWAY=66*60
+EXPRESA_CYCLE=98
+EXPRESA_WINDOW=12*3600+30*60
+
+def seconds(t):
+    h,m,s=map(int,t.split(':'))
+    return h*3600+m*60+s
+
 def load(n):return json.loads((P/'data'/n).read_text(encoding='utf-8'))
 def hh(s):return f'{s//3600:02}:{s//60%60:02}:{s%60:02}'
 def build(out,start,end,first,last):
@@ -31,7 +42,7 @@ def build(out,start,end,first,last):
     for r in catalog:
         rid=r['ruta']; sid=r['polyPasa']; info={'route':rid,'source_shape':sid,'status':'held','reason':HOLD.get(rid,'')}
         report.append(info)
-        if r['estado']!='Activo' or rid in HOLD or rid not in OPS or len(raw[sid])<2:continue
+        if r['estado']!='Activo' or rid in HOLD or (rid not in OPS and rid not in EXPRESA) or len(raw[sid])<2:continue
         a=raw[sid]
         if rid=='R28':
             cuts=[i for i in range(1,len(a)) if int(a[i]['id'])-int(a[i-1]['id'])!=1]
@@ -50,10 +61,23 @@ def build(out,start,end,first,last):
                 matches.append((along,k,dist))
         matches.sort(); info.update(length_km=round(line.length/1000,2),candidate_stops=len(matches),shape_points=len(coords))
         if len(matches)<2:info['reason']='Fewer than 2 candidate stops';continue
-        cycle,buses=OPS[rid]; headway=math.ceil(cycle/buses)*60
+        route_first,route_last=first,last
+        if rid in EXPRESA:
+            cycle=EXPRESA_CYCLE; headway=EXPRESA_HEADWAY
+            # Approximate 12.5-hour window from 23 combined programmed departures;
+            # use the general assumed opening time and offset the second variant.
+            opening=seconds(first)
+            closing=min(seconds(last),opening+EXPRESA_WINDOW)
+            variant_start=opening+EXPRESA[rid]
+            if variant_start>=closing:
+                info['reason']='Provisional Expresa service window is too short';continue
+            route_first,route_last=hh(variant_start),hh(closing)
+            info.update(headway_source='2023 mobility plan: 98 min / 3 vehicles, 33 min combined rounded up; user-approved equal split; not observed',window_source='Draft only: general assumed opening time, approximate 12.5 h duration from 23 combined programmed departures; 33 min offset for second variant, not verified',cycle_source='Historical combined Expresa cycle; assumed for both variants')
+        else:
+            cycle,buses=OPS[rid]; headway=math.ceil(cycle/buses)*60
         add('routes',route_id=rid,agency_id='BASA',route_short_name=rid,route_long_name='',route_type=3,route_color=r['colorPoly'].lstrip('#').upper())
         trip=rid+'_draft'; add('trips',route_id=rid,service_id='draft_weekday',trip_id=trip,shape_id=rid)
-        add('frequencies',trip_id=trip,start_time=first,end_time=last,headway_secs=headway,exact_times=0)
+        add('frequencies',trip_id=trip,start_time=route_first,end_time=route_last,headway_secs=headway,exact_times=0)
         cumulative=0
         for i,(lon,lat) in enumerate(coords):
             if i:cumulative+=math.dist(xy[i-1],xy[i])
@@ -62,7 +86,7 @@ def build(out,start,end,first,last):
         for i,(along,k,dist) in enumerate(matches):
             x=stops[k]; used.add(k); sec=max(prev,round((along-matches[0][0])/line.length*cycle*60));prev=sec
             add('stop_times',trip_id=trip,arrival_time=hh(sec),departure_time=hh(sec),stop_id=f'osm_{k}',stop_sequence=i+1,shape_dist_traveled=round(along,3),timepoint=0)
-        info.update(status='draft',reason='',headway_seconds=headway,cycle_minutes=cycle)
+        info.update(status='draft',reason='',headway_seconds=headway,cycle_minutes=cycle,first_departure=route_first,frequency_end_time=route_last)
     for k in sorted(used):
         x=stops[k]; name=x.get('tags',{}).get('name') or f'Paradero OSM {k}'
         if name == 'PARQUE LA CONSTITUCIÓN': name = 'Parque La Constitución'
