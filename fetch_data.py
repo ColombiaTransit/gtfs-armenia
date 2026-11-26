@@ -19,6 +19,9 @@ if not (p/'osm.json').exists():
     endpoint=os.environ.get('API_OVERPASS','').strip()
     if not endpoint: raise SystemExit('Missing organization variable API_OVERPASS; public fallback disabled')
     if not endpoint.startswith('https://'): raise SystemExit('API_OVERPASS must use HTTPS')
+    endpoint=endpoint.rstrip('/')
+    if not endpoint.endswith('/interpreter'):
+        endpoint += '/interpreter'
     headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36','Accept':'application/json, text/plain, */*','Accept-Language':'es-CO,es;q=0.9,en;q=0.8','Content-Type':'application/x-www-form-urlencoded'}
     try:
         request=urllib.request.Request(endpoint,data=urllib.parse.urlencode({'data':query}).encode(),headers=headers,method='POST')
