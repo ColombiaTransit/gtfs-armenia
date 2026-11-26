@@ -9,26 +9,43 @@ permissions:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Download municipal PDF
+      - name: Download and verify available municipal PDFs
+        shell: bash
         run: |
           mkdir -p research-download
-          curl --fail --location --retry 2 --connect-timeout 20 --max-time 120 \
-            --user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' \
-            --header 'Accept: application/pdf,*/*;q=0.8' \
-            --output research-download/1Plan_de_Movilidad_Sostenible_y_Segura.pdf \
-            'https://www.armenia.gov.co/wp-content/uploads/2024/02/1Plan_de_Movilidad_Sostenible_y_Segura.pdf'
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib
-          p=Path('research-download/1Plan_de_Movilidad_Sostenible_y_Segura.pdf')
-          data=p.read_bytes()
-          if not data.startswith(b'%PDF-') or b'%%EOF' not in data[-4096:]:
-              raise SystemExit('Response is not a complete PDF')
-          print(f'PDF size: {len(data)} bytes; SHA256: {hashlib.sha256(data).hexdigest()}')
-          PY
+          fetch_pdf() {
+            local name="$1"; shift
+            for url in "$@"; do
+              echo "Trying $url"
+              if curl --fail --location --retry 1 --connect-timeout 20 --max-time 120 \
+                --user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' \
+                --header 'Accept: application/pdf,*/*;q=0.8' \
+                --output "research-download/$name.tmp" "$url" && \
+                python -c 'import sys,pathlib,hashlib; d=pathlib.Path(sys.argv[1]).read_bytes(); assert d.startswith(b"%PDF-") and b"%%EOF" in d[-4096:]; print(len(d), hashlib.sha256(d).hexdigest())' "research-download/$name.tmp"; then
+                mv "research-download/$name.tmp" "research-download/$name"
+                return 0
+              fi
+              rm -f "research-download/$name.tmp"
+            done
+            echo "::warning::Unable to retrieve $name"
+            return 1
+          }
+          fetch_pdf Plan_de_Movilidad_Sostenible_y_Segura.pdf \
+            https://www.armenia.gov.co/wp-content/uploads/2024/02/Plan_de_Movilidad_Sostenible_y_Segura.pdf \
+            https://armenia.gov.co/wp-content/uploads/2024/02/Plan_de_Movilidad_Sostenible_y_Segura.pdf \
+            https://repositorio-imagenes-armenia.s3.us-east-005.backblazeb2.com/wp-content/uploads/2024/02/Plan_de_Movilidad_Sostenible_y_Segura.pdf || true
+          fetch_pdf DIAGNOSTICO_FINAL.pdf \
+            https://repositorio-imagenes-armenia.s3.us-east-005.backblazeb2.com/wp-content/uploads/2024/02/DIAGNOSTICO_FINAL.pdf \
+            https://armenia.gov.co/wp-content/uploads/2024/02/DIAGNOSTICO_FINAL.pdf || true
+          fetch_pdf FORMULACION_FINAL.pdf \
+            https://repositorio-imagenes-armenia.s3.us-east-005.backblazeb2.com/wp-content/uploads/2024/02/FORMULACION_FINAL.pdf \
+            https://armenia.gov.co/wp-content/uploads/2024/02/FORMULACION_FINAL.pdf || true
+          ls -lh research-download
+          test -f research-download/Plan_de_Movilidad_Sostenible_y_Segura.pdf
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: armenia-mobility-plan
           path: research-download/*.pdf
