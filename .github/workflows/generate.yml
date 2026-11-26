@@ -18,7 +18,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt
-      - run: python fetch_data.py
+      - name: Fetch source data
+        env:
+          API_OVERPASS: ${{ vars.API_OVERPASS }}
+        run: |
+          if [ -n "$API_OVERPASS" ]; then echo "::add-mask::$API_OVERPASS"; fi
+          python fetch_data.py
       - name: Generate research draft
         run: python generate.py --start "$(date -u +%F)" --end "$(date -u -d '+94 days' +%F)" --allow-estimates
       - uses: actions/setup-java@v4
