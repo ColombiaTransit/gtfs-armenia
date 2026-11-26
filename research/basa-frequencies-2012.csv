@@ -1,0 +1,16 @@
+route_id,decree,decree_date,dispatch_location,ordinary_peak_min,ordinary_normal_min,holiday_peak_min,holiday_normal_min,first_departure,service_until,source_page,source_year,status
+R1,0057,2011-07-28,Guaduales de la Villa,,,7,12,,,112,2012,historical_not_current
+R2,0078,2003-08-25,El Caimo,8,10,8,10,,,112,2012,historical_not_current
+R3,0135,2006-11-29,Rojas Pinilla II,15,15,15,15,06:00,22:00,112,2012,historical_not_current
+R4,030,2001-05-10,Puerto Espejo,5,7,5,7,,,112,2012,historical_not_current
+R5,030,2001-05-10,Los Quindos,6,8,6,8,,,112,2012,historical_not_current
+R6,030,2001-05-10,Bosques de Gibraltar,6,8,6,8,,,112,2012,historical_not_current
+R7,0111,2005-09-15,Pinares,8,10,8,10,,,112,2012,historical_not_current
+R9,057,2011-07-28,Planta Cicolsa,15,15,15,15,06:00,19:00,112,2012,historical_not_current
+R18,030,2001-05-10,Bosques de Gibraltar,10,13,10,13,,,113,2012,historical_not_current
+R28,0078,2003-08-25,Mercedes del Norte,8,10,8,10,,,113,2012,historical_not_current
+R31,057,2011-07-28,Guaduales de la Villa,10,12,10,12,,,114,2012,historical_not_current
+R32,0078,2003-08-25,[clipped in source] Piloto Ciudad Milag[...],9,10,9,10,,,114,2012,historical_not_current
+R35,R-187,1998-01-30,La Patria,8,10,8,10,,,114,2012,historical_not_current
+R36,0078,2003-08-25,Puerto Espejo,8,10,8,10,,,114,2012,historical_not_current
+R37,R-1877,1997-10-28,La Patria,7,10,7,10,,,114,2012,historical_not_current
