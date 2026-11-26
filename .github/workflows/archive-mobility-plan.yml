@@ -1,0 +1,41 @@
+name: Archive mobility plan
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/archive-mobility-plan.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Download verified research artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p research/sources/mobility-plan
+          gh run download 45857932362 --name armenia-mobility-plan --dir research/sources/mobility-plan
+      - name: Verify original PDF checksums
+        working-directory: research/sources/mobility-plan
+        run: |
+          sha256sum -c <<'EOF'
+          0c8933b9442f1be4e61f9ebfc02c5fa4845ca641c81de6d43873486d40b9ce30  Plan_de_Movilidad_Sostenible_y_Segura.pdf
+          67927b99789456b582a431735dbf9071fe1074162db4dd67c617ef0a6ff34b26  DIAGNOSTICO_FINAL.pdf
+          48d2723146c26fb9f0f126f02302189b006518bf59154b032943a99bc2eba12f  FORMULACION_FINAL.pdf
+          EOF
+      - name: Archive source PDFs in repository
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add research/sources/mobility-plan/*.pdf
+          if ! git diff --cached --quiet; then
+            git commit -m "Archive municipal mobility plan source PDFs"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
