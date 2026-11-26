@@ -16,3 +16,14 @@ Check whether BASA's website route selector (https://www.busesarmenia.com.co/rut
 ## Existing draft status
 
 Actions run 45859718230 succeeded, and generator log confirms both Expresa variants emitted (17 and 26 candidate stops respectively), with Portugalito held. Successful execution does not by itself prove validator has no notices.
+
+
+## Official BASA website route description (user-supplied)
+
+Fondo_1
+
+# RPortugalito
+
+Calle 25 entre Carrera 17 y Carrera 16 — Carrera 16 — Calle 26 — Ordenador vial La Cejita — Carrera 19 - Glorieta Tres Esquinas — Calle 51 — Cementerio Jardines de Armenia - Puesto de Policía Granada — Corregimiento El Caimo — La Báscula — Portugalito — La Báscula — Corregimiento El Caimo — Puesto de Policia Granada — Cementerio Jardines de Armenia — Carrera 8 — Club de Caza Tiro y Pesca — Calle 50 — Carrera 18 — Calle 26 — Carrera 17 — Calle 25.
+
+Source: BASA route selector response supplied by user; exact request URL and capture date not independently verified. This resolves the previously unknown city-side terminal and ordered itinerary. The rural corridor is shared in both directions; urban legs differ. Geocode and verify each named waypoint, then route with organization's bus GraphHopper profile, preserving direction and rural road access. Compare complete loop to 43 km historical target, not as a hard constraint. No verified GPS coordinates or exact departure times yet. Four programmed runs and 120-minute cycle do not determine dispatch times. Keep generator hold until geometry and schedule evidence are sufficient.
