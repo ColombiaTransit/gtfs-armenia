@@ -29,7 +29,7 @@ def road_names(w):
     return " ".join(norm(t.get(k,"")) for k in ("name","alt_name","official_name"))
 def roadmatch(w,typ,num):
     names=road_names(w)
-    return bool(re.search(r"\b"+typ+r"\s*"+str(num)+r"\b",names))
+    return bool(re.search(r"\b(?:"+typ+r")\s*"+str(num)+r"\b",names))
 def coords(w):return [[v["lon"],v["lat"]] for v in w.get("geometry",[]) if v]
 roads=overpass('[out:json][timeout:180];way["highway"](4.395,-75.79,4.55,-75.66);out body geom;')
 roads=[w for w in roads if w.get("type")=="way" and len(coords(w))>1 and w.get("tags",{}).get("highway") not in {"footway","path","steps","pedestrian","cycleway","construction","proposed","track","bridleway"} and w.get("tags",{}).get("access") not in {"private","no"} and w.get("tags",{}).get("motor_vehicle")!="no"]
@@ -79,7 +79,7 @@ jardines=snap("Jardines",[-75.69243,4.50809],"OSM cemetery way 308547109 centroi
 granada=snap("Granada",[-75.70219,4.49195],"OSM police node 4322327208, road candidate",major,300)
 caimo=snap("El_Caimo",[-75.70938,4.47491],"OSM village node 703492570, road candidate",major,350)
 port=snap("Portugalito",[-75.77242,4.41127],"OSM locality node 703492500; turnaround UNVERIFIED",major,700)
-basculas=[x for x in pois if re.search("bascula",norm(x.get("tags",{}).get("name",""))) and "lon" in x or re.search("bascula",norm(x.get("tags",{}).get("name",""))) and x.get("center")]
+basculas=[x for x in pois if re.search("bascula",norm(x.get("tags",{}).get("name",""))) and ("lon" in x or x.get("center"))]
 report["bascula_candidates"]=basculas
 bascula=None
 if len(basculas)==1:
