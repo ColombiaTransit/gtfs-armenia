@@ -1,0 +1,35 @@
+name: Reconstruct Portugalito candidate
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/reconstruct_portugalito.py
+      - .github/workflows/reconstruct-portugalito.yml
+permissions:
+  contents: read
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Collect anchors and request bus route
+        env:
+          API_OVERPASS: ${{ vars.API_OVERPASS }}
+          GRAPHHOPPER_URL: ${{ vars.GRAPHHOPPER_URL }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          if [ -n "$API_OVERPASS" ]; then echo "::add-mask::$API_OVERPASS"; fi
+          if [ -n "$GRAPHHOPPER_URL" ]; then echo "::add-mask::$GRAPHHOPPER_URL"; fi
+          python -m py_compile scripts/reconstruct_portugalito.py
+          python scripts/reconstruct_portugalito.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portugalito-reconstruction
+          path: research-output/portugalito/
+          if-no-files-found: warn
